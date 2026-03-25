@@ -7,6 +7,7 @@ It evaluates TypeScript functions with a weighted complexity model inspired by c
 ## Features
 
 - Score a single `.ts` or `.tsx` file from an OMP tool call or command
+- Surface a summary complexity score that weights function complexity more heavily than file-level complexity
 - Rank the worst functions by weighted complexity
 - Report file-level complexity signals such as helper density and trivial helper overuse
 - Include detailed per-function score breakdowns for cognitive complexity, duplication, reassignments, function length, call-chain depth, and helper depth
@@ -77,7 +78,7 @@ score_typescript_complexity path=src/service.ts
 
 ```text
 TypeScript complexity summary for src/service.ts
-functions: 12 | average weighted score: 11.3 | highest weighted score: 42.0
+functions: 12 | summary complexity: 13.5 | average weighted score: 11.3 | highest weighted score: 42.0
 ranked offenders: 10
 overall file complexity: [medium] score 18.0
 

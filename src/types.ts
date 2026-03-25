@@ -98,6 +98,7 @@ export interface FileComplexitySummary {
 	functionCount: number;
 	highestScore: number;
 	averageScore: number;
+	summaryScore: number;
 	overallFileComplexity: OverallFileComplexity;
 	worstFunctions: FunctionComplexityResult[];
 	functions: FunctionComplexityResult[];

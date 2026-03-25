@@ -21,6 +21,7 @@ export function formatFileLevelSummary(summary: FileComplexitySummary, options: 
 	const heading = `TypeScript complexity summary for ${displayPath}`;
 	const stats = [
 		`functions: ${summary.functionCount}`,
+		`summary complexity: ${formatScore(summary.summaryScore)}`,
 		`average weighted score: ${formatScore(summary.averageScore)}`,
 		`highest weighted score: ${formatScore(summary.highestScore)}`,
 	];

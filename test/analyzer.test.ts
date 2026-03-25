@@ -412,6 +412,7 @@ describe("analyzeTypeScriptFile", () => {
 			trivialSingleUseNonTopLevelFunctions: { value: 4, weight: 4, contribution: 16 },
 		});
 		expect(weightedScore).toBeCloseTo(28, 10);
+		expect(summary.summaryScore).toBeCloseTo(10.19047619047619, 10);
 		expect(bucket).toBe("medium");
 	});
 
@@ -555,6 +556,7 @@ describe("analyzeTypeScriptFile", () => {
 			trivialSingleUseNonTopLevelFunctions: { value: 0, weight: 4, contribution: 0 },
 		});
 		expect(summary.overallFileComplexity.weightedScore).toBe(0);
+		expect(summary.summaryScore).toBeCloseTo(2.6666666666666665, 10);
 		expect(summary.overallFileComplexity.bucket).toBe("low");
 	});
 

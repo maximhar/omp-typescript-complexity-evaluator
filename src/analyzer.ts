@@ -28,6 +28,9 @@ export interface AnalyzeTypeScriptOptions {
 const DEFAULT_WORST_FUNCTION_COUNT = 10;
 const SUPPORTED_TYPESCRIPT_EXTENSIONS = [".ts", ".tsx"];
 
+const FUNCTION_SUMMARY_WEIGHT = 2 / 3;
+const FILE_SUMMARY_WEIGHT = 1 / 3;
+
 export async function analyzeTypeScriptComplexity(
 	options: AnalyzeTypeScriptOptions,
 ): Promise<FileComplexitySummary> {
@@ -90,12 +93,15 @@ export function analyzeTypeScriptSource(
 		.slice(0, DEFAULT_WORST_FUNCTION_COUNT);
 	const totalScore = functionResults.reduce((sum, result) => sum + result.weightedScore, 0);
 	const highestScore = worstFunctions[0]?.weightedScore ?? 0;
+	const averageScore = functionResults.length === 0 ? 0 : totalScore / functionResults.length;
+	const summaryScore = computeSummaryScore(averageScore, overallFileComplexity.weightedScore);
 
 	return {
 		path: normalizedPath,
 		functionCount: functionResults.length,
 		highestScore,
-		averageScore: functionResults.length === 0 ? 0 : totalScore / functionResults.length,
+		averageScore,
+		summaryScore,
 		overallFileComplexity,
 		worstFunctions,
 		functions: functionsBySourceOrder,
@@ -140,6 +146,10 @@ function computeOverallFileComplexity(
 
 function computeOverallFileWeightedScore(breakdown: FileComplexityBreakdown): number {
 	return breakdown.helpersPerTopLevelFunction.contribution + breakdown.trivialSingleUseNonTopLevelFunctions.contribution;
+}
+
+function computeSummaryScore(averageScore: number, overallFileWeightedScore: number): number {
+	return averageScore * FUNCTION_SUMMARY_WEIGHT + overallFileWeightedScore * FILE_SUMMARY_WEIGHT;
 }
 
 function computeOverallFileComplexityBreakdown(
