@@ -52,7 +52,11 @@ export interface FunctionComplexityAnalysis {
 }
 
 export function createTypeScriptSourceFile(path: string, sourceText: string): ts.SourceFile {
-	return ts.createSourceFile(path, sourceText, ts.ScriptTarget.Latest, true, ts.ScriptKind.TS);
+	return ts.createSourceFile(path, sourceText, ts.ScriptTarget.Latest, true, resolveScriptKind(path));
+}
+
+function resolveScriptKind(path: string): ts.ScriptKind {
+	return path.endsWith(".tsx") ? ts.ScriptKind.TSX : ts.ScriptKind.TS;
 }
 
 export function collectStableFunctions(sourceFile: ts.SourceFile): CollectedFunction[] {

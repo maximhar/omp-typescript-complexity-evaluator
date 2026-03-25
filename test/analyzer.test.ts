@@ -46,6 +46,20 @@ describe("analyzeTypeScriptFile", () => {
 		expect(summary.functions.some((result) => result.id.includes("map") || result.id.includes("anonymous"))).toBeFalse();
 	});
 
+	it("analyzes tsx component files with stable functions", async () => {
+		const summary = await analyzeTypeScriptFile(fixturePath("component-sample.tsx"));
+
+		expect(summary.path).toBe(fixturePath("component-sample.tsx"));
+		expect(summary.functionCount).toBe(2);
+		expect(
+			summary.functions.map((result) => ({ id: result.id, kind: result.kind })),
+		).toEqual([
+			{ id: "ScoreCard", kind: "function" },
+			{ id: "ScoreBadge", kind: "function" },
+		]);
+		expect(renderToolTextOutput(summary)).toContain("component-sample.tsx");
+	});
+
 	it("keeps parent metrics isolated from nested helper bodies and orders offenders by severity", async () => {
 		const summary = await analyzeTypeScriptFile(fixturePath("complexity-sample.ts"));
 		const indexed = functionsById(summary);
@@ -558,7 +572,7 @@ describe("analyzeTypeScriptFile", () => {
 			`TypeScript file not found: ${path.join(FIXTURES_DIR, "missing.ts")}`,
 		);
 		expect(() => analyzeTypeScriptSource("export const value = 1;", "inline.js")).toThrow(
-			"Expected a .ts file path, received 'inline.js'.",
+			"Expected a .ts or .tsx file path, received 'inline.js'.",
 		);
 	});
 	it("counts a one-line return with a template literal as one LOC", () => {

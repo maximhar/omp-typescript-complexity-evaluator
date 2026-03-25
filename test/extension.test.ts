@@ -128,6 +128,29 @@ describe("complexity extension", () => {
 		expect(ui.calls).toEqual([]);
 	});
 
+	it("executes the tool against a tsx path and returns text plus details", async () => {
+		const { tool } = registerExtension();
+		const fixturePath = path.join(FIXTURES_DIR, "component-sample.tsx");
+		const expectedSummary = await analyzeTypeScriptFile(fixturePath);
+		const ui = createNotifyRecorder();
+
+		const result = await tool.execute(
+			"tool-call-tsx",
+			{ path: "component-sample.tsx" },
+			undefined,
+			undefined,
+			{
+				cwd: FIXTURES_DIR,
+				hasUI: true,
+				ui,
+			},
+		);
+
+		expect(result.details).toEqual(expectedSummary);
+		expect(result.content[0]?.text).toContain("component-sample.tsx");
+		expect(ui.calls).toEqual([]);
+	});
+
 	it("uses the same analyzer and renderer behavior for command success notifications", async () => {
 		const { command, tool } = registerExtension();
 		const ui = createNotifyRecorder();

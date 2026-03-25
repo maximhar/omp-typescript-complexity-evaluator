@@ -26,6 +26,7 @@ export interface AnalyzeTypeScriptOptions {
 }
 
 const DEFAULT_WORST_FUNCTION_COUNT = 10;
+const SUPPORTED_TYPESCRIPT_EXTENSIONS = [".ts", ".tsx"];
 
 export async function analyzeTypeScriptComplexity(
 	options: AnalyzeTypeScriptOptions,
@@ -181,8 +182,8 @@ async function readTypeScriptFile(path: string): Promise<string> {
 }
 
 function validateTypeScriptPath(path: string): string {
-	if (!path.endsWith(".ts")) {
-		throw new Error(`Expected a .ts file path, received '${path}'.`);
+	if (!SUPPORTED_TYPESCRIPT_EXTENSIONS.some((extension) => path.endsWith(extension))) {
+		throw new Error(`Expected a .ts or .tsx file path, received '${path}'.`);
 	}
 	return path;
 }
@@ -196,6 +197,7 @@ function createInMemoryProgram(sourceFile: ts.SourceFile): ts.Program {
 		noEmit: true,
 		noResolve: true,
 		noLib: true,
+		jsx: ts.JsxEmit.Preserve,
 	};
 
 	const host: ts.CompilerHost = {
