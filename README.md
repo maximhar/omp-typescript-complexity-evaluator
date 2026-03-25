@@ -26,6 +26,24 @@ It evaluates TypeScript functions with a weighted complexity model inspired by c
 omp plugin install omp-typescript-complexity-evaluator
 ```
 
+### Install the accompanying skill
+
+The repository also includes the `typescript-complexity-refactor` skill under `skills/`. To make it available to OMP, install it into your local skills directory:
+
+```bash
+mkdir -p ~/.agents/skills
+ln -sfn /path/to/omp-typescript-complexity-evaluator/skills/typescript-complexity-refactor ~/.agents/skills/typescript-complexity-refactor
+```
+
+If you prefer a copy instead of a symlink:
+
+```bash
+mkdir -p ~/.agents/skills/typescript-complexity-refactor
+cp /path/to/omp-typescript-complexity-evaluator/skills/typescript-complexity-refactor/SKILL.md ~/.agents/skills/typescript-complexity-refactor/SKILL.md
+```
+
+Once installed, you can reference the skill from OMP when you want refactoring guidance that matches this evaluator's scoring model.
+
 ### Local development link
 
 ```bash
@@ -87,6 +105,10 @@ The extension entry point is `src/extension.ts`.
 ## Repository layout
 
 ```text
+skills/
+  typescript-complexity-refactor/
+    SKILL.md               # refactoring guidance tuned to this evaluator
+
 src/
   analyzer.ts             # core complexity analysis
   call-graph.ts           # helper graph and call-chain metrics
