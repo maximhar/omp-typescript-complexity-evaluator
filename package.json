@@ -1,7 +1,7 @@
 {
 	"type": "module",
 	"name": "omp-typescript-complexity-evaluator",
-	"version": "1.0.0",
+	"version": "1.0.1",
 	"description": "Oh My Pi plugin for scoring TypeScript function complexity and ranking offenders.",
 	"homepage": "https://github.com/maximhar/omp-typescript-complexity-evaluator#readme",
 	"author": "Maxim Harizanov",
@@ -45,7 +45,11 @@
 		"access": "public"
 	},
 	"omp": {
-		"extensions": ["./src/extension.ts"]
+		"extensions": [
+			"./src/extension.ts"
+		]
 	},
-	"files": ["src"]
+	"files": [
+		"src"
+	]
 }
