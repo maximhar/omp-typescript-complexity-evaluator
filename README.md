@@ -6,18 +6,18 @@ It evaluates TypeScript functions with a weighted complexity model inspired by c
 
 ## Features
 
-- Score a single `.ts` or `.tsx` file from an OMP tool call or command
+- Score a single `.ts` or `.tsx` file from an OMP tool call, OMP command, or MCP tool invocation
 - Surface a summary complexity score that weights function complexity more heavily than file-level complexity
 - Rank the worst functions by weighted complexity
 - Report file-level complexity signals such as helper density and trivial helper overuse
 - Include detailed per-function score breakdowns for cognitive complexity, duplication, reassignments, function length, call-chain depth, and helper depth
-- Return structured details for downstream tooling while also rendering human-readable summaries
-- Cover analyzer and extension behavior with fixture-based tests
+- Return structured details for downstream tooling while also rendering human-readable summaries over both OMP and MCP entrypoints
+- Cover analyzer, extension, and MCP server behavior with fixture-based tests
 
 ## Requirements
 
 - [Bun](https://bun.sh/) >= 1.3.7
-- Oh My Pi / `@oh-my-pi/pi-coding-agent` v13
+- Oh My Pi / `@oh-my-pi/pi-coding-agent` v13 if you want the OMP plugin path
 
 ## Install
 
@@ -27,6 +27,41 @@ It evaluates TypeScript functions with a weighted complexity model inspired by c
 omp plugin install omp-typescript-complexity-evaluator
 ```
 
+### MCP server via Bunx
+
+Configure any stdio-capable MCP client to run the packaged server binary through Bun:
+
+```json
+{
+  "mcpServers": {
+    "typescript-complexity": {
+      "command": "bunx",
+      "args": [
+        "--package",
+        "omp-typescript-complexity-evaluator",
+        "omp-typescript-complexity-evaluator-mcp"
+      ]
+    }
+  }
+}
+```
+
+The MCP server exposes the same `score_typescript_complexity` tool as the OMP plugin.
+
+
+For local development against a checked-out repository, point your MCP client at the repo directly:
+
+```json
+{
+  "mcpServers": {
+    "typescript-complexity-dev": {
+      "command": "bun",
+      "args": ["run", "mcp"],
+      "cwd": "/absolute/path/to/omp-typescript-complexity-evaluator"
+    }
+  }
+}
+```
 ### Install the accompanying skill
 
 The repository also includes the `typescript-complexity-refactor` skill under `skills/`. To make it available to OMP, install it into your local skills directory:
@@ -62,17 +97,33 @@ omp plugin link /path/to/omp-typescript-complexity-evaluator
 
 ## Usage
 
-### Tool
+### OMP tool
 
 ```text
 score_typescript_complexity path=src/service.ts
 ```
 
-### Command
+### OMP command
 
 ```text
 /complexity-score src/service.ts
 ```
+
+### MCP server
+
+Run the local stdio server during development:
+
+```bash
+bun run mcp
+```
+
+The MCP server exposes `score_typescript_complexity` with input like:
+
+```json
+{ "path": "src/service.ts" }
+```
+
+Successful calls return the same rendered text summary shown below plus structured JSON content containing the full `FileComplexitySummary` payload.
 
 ## Example output
 
@@ -94,7 +145,9 @@ bun install
 bun run verify
 ```
 
-The extension entry point is `src/extension.ts`.
+Entrypoints:
+- OMP extension: `src/extension.ts`
+- MCP stdio server: `src/mcp-server.ts`
 
 ## Release
 
@@ -106,22 +159,28 @@ The extension entry point is `src/extension.ts`.
 ## Repository layout
 
 ```text
+bin/
+  omp-typescript-complexity-evaluator-mcp  # Bun-backed MCP server executable
+
 skills/
   typescript-complexity-refactor/
-    SKILL.md               # refactoring guidance tuned to this evaluator
+    SKILL.md                               # refactoring guidance tuned to this evaluator
 
 src/
-  analyzer.ts             # core complexity analysis
-  call-graph.ts           # helper graph and call-chain metrics
-  extension.ts            # OMP tool and command registration
-  function-resolution.ts  # TypeScript symbol/function resolution
-  metrics.ts              # function collection and metric calculation
-  render.ts               # human-readable summaries
-  types.ts                # shared result and weight types
+  analyzer.ts                              # core complexity analysis
+  call-graph.ts                            # helper graph and call-chain metrics
+  complexity-tool.ts                       # shared tool metadata and path resolution
+  extension.ts                             # OMP tool and command registration
+  function-resolution.ts                   # TypeScript symbol/function resolution
+  mcp-server.ts                            # MCP stdio server registration
+  metrics.ts                               # function collection and metric calculation
+  render.ts                                # human-readable summaries
+  types.ts                                 # shared result and weight types
 
 test/
   analyzer.test.ts
   extension.test.ts
+  mcp-server.test.ts
   fixtures/
 ```
 

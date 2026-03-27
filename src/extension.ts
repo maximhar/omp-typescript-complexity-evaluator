@@ -1,6 +1,11 @@
-import * as path from "node:path";
-
-import { analyzeTypeScriptFile } from "./analyzer.ts";
+import {
+	analyzeRequestedPath,
+	COMPLEXITY_TOOL_DESCRIPTION,
+	COMPLEXITY_TOOL_NAME,
+	COMPLEXITY_TOOL_PATH_DESCRIPTION,
+	COMPLEXITY_TOOL_TITLE,
+	getErrorMessage,
+} from "./complexity-tool.ts";
 import { renderNotificationSummary, renderToolTextOutput } from "./render.ts";
 import type { ComplexityToolParams, FileComplexitySummary } from "./types.ts";
 
@@ -52,20 +57,19 @@ interface ExtensionAPI {
 	): void;
 }
 
-const TOOL_NAME = "score_typescript_complexity";
 const COMMAND_NAME = "complexity-score";
 const COMMAND_USAGE = `Usage: /${COMMAND_NAME} <path>`;
 
 export default function complexityExtension(pi: ExtensionAPI): void {
 	const { Type } = pi.typebox;
 	const toolParamsSchema = Type.Object({
-		path: Type.String({ description: "Path to the TypeScript file to analyze" }),
+		path: Type.String({ description: COMPLEXITY_TOOL_PATH_DESCRIPTION }),
 	});
 
 	pi.registerTool<FileComplexitySummary>({
-		name: TOOL_NAME,
-		label: "TypeScript Complexity Score",
-		description: "Analyze one TypeScript file and report ranked function complexity offenders.",
+		name: COMPLEXITY_TOOL_NAME,
+		label: COMPLEXITY_TOOL_TITLE,
+		description: COMPLEXITY_TOOL_DESCRIPTION,
 		parameters: toolParamsSchema,
 		async execute(_toolCallId, params, _signal, _onUpdate, ctx) {
 			const analysis = await analyzeRequestedPath(params.path, ctx.cwd);
@@ -99,10 +103,6 @@ export default function complexityExtension(pi: ExtensionAPI): void {
 	});
 }
 
-async function analyzeRequestedPath(inputPath: string, cwd: string): Promise<FileComplexitySummary> {
-	const resolvedPath = path.resolve(cwd, inputPath.trim());
-	return analyzeTypeScriptFile(resolvedPath);
-}
 
 function parseSinglePathArgument(rawArgs: string): string | null {
 	const tokens = parseCommandArgs(rawArgs.trim());
@@ -153,6 +153,3 @@ function parseCommandArgs(argsString: string): string[] {
 	return args;
 }
 
-function getErrorMessage(error: unknown): string {
-	return error instanceof Error ? error.message : String(error);
-}

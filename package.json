@@ -20,19 +20,28 @@
 		"analysis",
 		"omp",
 		"oh-my-pi",
-		"plugin"
+		"plugin",
+		"mcp"
 	],
 	"scripts": {
 		"check": "tsc --noEmit -p tsconfig.json",
 		"test": "bun test",
 		"verify": "bun run test && bun run check",
+		"mcp": "bun src/mcp-server.ts",
 		"prepare:publish": "bun scripts/prepare-publish-version.mjs"
 	},
 	"peerDependencies": {
 		"@oh-my-pi/pi-coding-agent": "^13"
 	},
+	"peerDependenciesMeta": {
+		"@oh-my-pi/pi-coding-agent": {
+			"optional": true
+		}
+	},
 	"dependencies": {
-		"typescript": "^5.9.2"
+		"@modelcontextprotocol/sdk": "^1.28.0",
+		"typescript": "^5.9.2",
+		"zod": "^4.3.6"
 	},
 	"devDependencies": {
 		"@oh-my-pi/pi-coding-agent": "^13",
@@ -44,12 +53,16 @@
 	"publishConfig": {
 		"access": "public"
 	},
+	"bin": {
+		"omp-typescript-complexity-evaluator-mcp": "./bin/omp-typescript-complexity-evaluator-mcp"
+	},
 	"omp": {
 		"extensions": [
 			"./src/extension.ts"
 		]
 	},
 	"files": [
-		"src"
+		"src",
+		"bin"
 	]
 }

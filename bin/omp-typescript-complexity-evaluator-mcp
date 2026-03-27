@@ -1,0 +1,11 @@
+#!/usr/bin/env bun
+
+import { getErrorMessage } from "../src/complexity-tool.ts";
+import { startMcpStdioServer } from "../src/mcp-server.ts";
+
+try {
+	await startMcpStdioServer();
+} catch (error) {
+	console.error(getErrorMessage(error));
+	process.exit(1);
+}
