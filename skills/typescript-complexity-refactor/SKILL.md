@@ -168,6 +168,165 @@ Return:
 3. any residual complexity you intentionally kept and why
 ```
 
+## Function Tree Mapping Before Refactoring
+
+Before changing code, map the function tree for the area you want to refactor.
+
+Do this explicitly for every relevant function:
+- `<function name> [role]: <one-line description>`
+- `Calls:`
+  - `<called function 1>`
+  - `<called function 2>`
+  - `none`
+
+Use these role labels:
+- `orchestration`
+- `validation`
+- `translation`
+- `derivation`
+- `side effect`
+- `wrapper/plumbing`
+- `mixed` (only when one function currently owns too many roles)
+
+### Recommended Analysis Format
+
+```text
+Function tree
+
+<function A> [orchestration]: <short description>
+  Calls:
+  - <function B>
+  - <function C>
+
+<function B> [validation]: <short description>
+  Calls:
+  - none
+
+<function C> [derivation]: <short description>
+  Calls:
+  - <function D>
+```
+
+### How To Use The Map
+
+After writing the tree, classify each function:
+
+- Merge candidates:
+  - wrappers that only forward data
+  - one-use helpers that only package arguments
+  - tiny translation helpers with no standalone business meaning
+- Keep candidates:
+  - top-level orchestration functions
+  - meaningful derivation functions
+  - validation helpers that isolate a real concept
+- Split candidates:
+  - long functions mixing multiple roles, for example:
+    - account lookup + currency validation + request building + logging
+    - HTTP call + error extraction + shape validation + parsing
+    - quote lookup + orientation validation + pricing math
+
+### Concrete Example
+
+```text
+quotePlanningLanePricingMatrix [orchestration]: coordinates planning quote normalization, remote quote fetching, and lane pricing derivation
+  Calls:
+  - buildNormalizedLaneQuoteInputs
+  - requestBulkPlanningQuotes
+  - buildLanePricingMatrixFromQuoteResponses
+
+buildNormalizedLaneQuoteInputs [normalization]: converts candidate lanes into quoteable lane inputs
+  Calls:
+  - buildNormalizedLanePlanningQuoteInput
+
+buildNormalizedLanePlanningQuoteInput [mixed]: resolves bank accounts, resolves supported currencies and representative amounts, logs the lane, and builds forward/reverse quote requests
+  Calls:
+  - resolvePlanningLaneBankAccount
+  - resolvePlanningQuoteRequestSide
+
+requestBulkPlanningQuotes [validation + side effect]: sends bulk quote request, validates response status/body, and parses returned quotes
+  Calls:
+  - extractPlanningQuoteErrorResponse
+  - isPlanningQuoteBatchResponse
+
+buildLanePricingFromQuotes [derivation]: matches returned quotes to one lane, validates orientation, derives rate and cost_per_unit
+  Calls:
+  - resolveLanePlanningQuote
+  - deriveQuotedRate
+  - derivePlanningSpreadCostPerUnit
+```
+
+What this example shows:
+- `quotePlanningLanePricingMatrix` should stay because it is a real orchestration phase.
+- `buildNormalizedLanePlanningQuoteInput` should exist only if it keeps normalization separate from orchestration; if it becomes a blob, split only by real sub-concepts.
+- `requestBulkPlanningQuotes` should stay, but only if response validation is not bloating it too much.
+- `buildLanePricingFromQuotes` should stay because it is a real business derivation step.
+- Tiny wrappers below that should be merged unless they isolate a real domain concept.
+
+### Decision Rule Learned From Practice
+
+If the tree shows too many nodes labeled `wrapper/plumbing`, flatten.
+
+If the tree shows one function labeled with several unrelated roles, for example:
+- validation + translation + logging + derivation
+
+then split by semantic role.
+
+Aim for a shallow tree, not a flat blob:
+- 1 orchestration function
+- a few meaningful phase helpers
+- a few focused validation/derivation helpers
+- no long chain of wrappers
+- no monster function that owns everything
+
+Important: do not optimize only for fewer functions. After each pass, check all three:
+- function count
+- worst-offender complexity
+- summary file complexity
+
+A refactor is successful when:
+- the tree becomes simpler
+- the worst offenders shrink
+- responsibilities are easier to explain
+
+## Practical Pattern That Worked Well
+
+Important caution from later refactors:
+- Reducing function count and reducing complexity score are related but not identical goals.
+- Flattening a helper-heavy module too aggressively can improve the tree shape while making the remaining functions much worse by the scorer.
+- In one follow-up refactor, collapsing ~30 helper functions to ~9 made the call tree simpler but concentrated complexity into 3 heavy functions (`buildNormalizedLaneQuoteInputs`, response handling, and quote-to-pricing correlation).
+- Use a balanced target: collapse trivial wrappers and plumbing helpers first, but preserve a few real phase helpers so complexity does not pool into one long normalization or validation function.
+- Heuristic: prefer roughly 2-4 meaningful helpers per business phase over either extreme (dozens of tiny wrappers or one giant orchestration blob).
+
+A successful pattern for reducing a quote/planning helper file from severe offenders to all functions under 30 was:
+
+1. Keep the exported orchestration function names if possible.
+   - Name-length penalties are usually much smaller than LOC/cognitive penalties.
+   - First try splitting business phases before renaming public APIs.
+
+2. Split long orchestration functions into real domain phases such as:
+   - resolve accounts / dependencies
+   - resolve representative amounts or config
+   - build request context / ids
+   - build concrete forward/reverse requests
+   - fetch remote response
+   - validate unsuccessful response
+   - extract successful payload
+   - correlate response objects
+   - derive final per-item pricing/output
+
+3. Prefer a simple top-level loop over `map(...)` when the function is orchestrating multiple steps.
+   - This keeps complexity local and avoids burying work in inline callbacks.
+
+4. Extract validation and derivation helpers separately.
+   - Validation helpers keep fail-closed behavior explicit.
+   - Derivation helpers isolate math/translation logic from request orchestration.
+
+5. Preserve behavior first, then optimize names only if still needed.
+   - In one successful refactor, helper extraction alone reduced the worst function from 85 to 23, so a public API rename was unnecessary.
+
+6. Watch for type-surface regressions after splitting response handling.
+   - When a response body can be `undefined`, helper signatures should accept `undefined` and perform explicit fail-closed validation instead of assuming success-path typing.
+
 ## Review Checklist
 
 After refactoring, ask:
@@ -177,3 +336,4 @@ After refactoring, ask:
 - Did I preserve transaction and failure semantics?
 - Did I run the relevant lint/build/test checks after the optimization iteration?
 - Did I make the next edit easier?
+
